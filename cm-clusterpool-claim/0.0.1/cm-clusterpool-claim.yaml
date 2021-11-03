@@ -1,0 +1,56 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: cm-clusterpool-claim
+  labels:
+    app.kubernetes.io/version: "0.0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/categories: Kubernetes
+    tekton.dev/tags: "aws, openshift, rhacm"
+    tekton.dev/displayName: "cm ClusterPool Checkout"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+  description: |
+    Claims a cluster from an ACM/OCM ClusterPool and extracts authentication credentials.
+
+    This task can be used to claim a cluster from a ClusterPool created on an ACM/OCM Hub cluster
+    and extract the credentials and kubeconfig from the claimed ClusterDeployment into a workspace.
+  params:
+  - name: clusterpool-name
+    type: string
+    description: The name of the ClusterPool from which you want to claim a cluster.  
+  - name: clusterclaim-name
+    type: string
+    description: The name of the ClusterClaim that will be created against your ClusterPool
+  - name: clusterpool-namespace
+    type: string
+    description: The namespace that holds your ClusterPools
+  - name: clusterpool-group
+    type: string
+    description: An RBAC group that has access to your ClusterPools
+  workspaces:
+  - name: credentials
+    description: |
+      A workspace to which the admin username, password, and kubeconfig for the claimed cluster will be stored
+  steps:
+  - name: write-kubeconfig
+    image: quay.io/gurnbenibm/cm:latest
+    script: |
+      echo "Setting up the local cluster as a ClusterPoolHost with which to interact."
+      # We have to oc login due to limitations in 'cm create cph'
+      set +x
+      oc login `oc whoami --show-console | sed 's/console-openshift-console.apps/api/g'`:6443 \
+        --token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token` \
+        --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      set -x
+      cm create clusterpoolhost tek-hub --api-server=`oc whoami --show-console | sed 's/console-openshift-console.apps/api/g'`:6443 --console=`oc whoami --show-console` --group $(params.clusterpool-group) --namespace $(params.clusterpool-namespace)
+      echo "Creating ClusterClaim named $(params.clusterclaim-name) against $(params.clusterpool-name)."
+      cm create clusterclaim $(params.clusterpool-name) $(params.clusterclaim-name)
+      if [ $? -eq 0 ]
+      then
+        echo "Successfully claimed cluster with clusterclaim $(params.clusterclaim-name)"
+        cm get clusterclaim $(params.clusterclaim-name) -o json | jq -r '.spec.user' > $(workspaces.credentials.path)/username
+        cm get clusterclaim $(params.clusterclaim-name) -o json | jq -r '.spec.password' > $(workspaces.credentials.path)/password
+        cm get clusterclaim $(params.clusterclaim-name) -o json | jq -r '.spec.apiServer' > $(workspaces.credentials.path)/api
+      fi
