@@ -34,7 +34,7 @@ spec:
     description: |
       A workspace to which the admin username, password, and kubeconfig for the claimed cluster will be stored
   steps:
-  - name: write-kubeconfig
+  - name: claim-cluster
     image: quay.io/gurnbenibm/cm:latest
     script: |
       echo "Setting up the local cluster as a ClusterPoolHost with which to interact."
@@ -50,7 +50,7 @@ spec:
       if [ $? -eq 0 ]
       then
         echo "Successfully claimed cluster with clusterclaim $(params.clusterclaim-name)"
-        cm get clusterclaim $(params.clusterclaim-name) -o json | jq -r '.spec.user' > $(workspaces.credentials.path)/username
-        cm get clusterclaim $(params.clusterclaim-name) -o json | jq -r '.spec.password' > $(workspaces.credentials.path)/password
-        cm get clusterclaim $(params.clusterclaim-name) -o json | jq -r '.spec.apiServer' > $(workspaces.credentials.path)/api
+        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.user' > $(workspaces.credentials.path)/username
+        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.password' > $(workspaces.credentials.path)/password
+        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.apiServer' > $(workspaces.credentials.path)/api
       fi

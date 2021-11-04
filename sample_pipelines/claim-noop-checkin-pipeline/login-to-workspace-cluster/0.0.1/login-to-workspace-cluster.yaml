@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: login-to-workspace-cluster
+  labels:
+    app.kubernetes.io/version: "0.0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/categories: Kubernetes
+    tekton.dev/tags: "aws, openshift, rhacm"
+    tekton.dev/displayName: "cm ClusterPool Checkout"
+    tekton.dev/platforms: "linux/amd64"
+spec:
+  description: |
+    Logs in to a cluster whose credentials are stored in the credentials workspace.
+
+    This task is meant to be used in conjunction with the cm-clusterpool-claim and cm-clusterpool-checkin tasks
+    to claim a cluster (cm-clusterpool-claim), carry out a login and no-op operation on the claimed cluster (this task)
+    and check the cluster back in (cm-clusterpool-checkin).  
+  workspaces:
+  - name: credentials
+    description: |
+      A workspace to which the admin username, password, and kubeconfig for the claimed cluster will be stored
+  steps:
+  - name: cluster-login
+    image: quay.io/gurnbenibm/cm:latest
+    script: |
+      echo "Logging in to the cluster whose credentials are in the credentials workspace."
+      set +x
+      oc login `cat $(workspaces.credentials.path)/api` \
+        -u=`cat $(workspaces.credentials.path)/username` \
+        -p=`cat $(workspaces.credentials.path)/password` \
+        --insecure-skip-tls-verify=true
+      set -x
+      echo "Running 'oc cluster-info' to verify target"
+      oc cluster-info
+      echo "Running 'oc whoami' to verify identity"
+      oc whoami

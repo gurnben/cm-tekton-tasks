@@ -17,39 +17,31 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cm-claimed-cluster-credentials
-spec:
-  resources:
-    requests:
-      storage: 5M
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: gp2
----
 apiVersion: tekton.dev/v1beta1
-kind: TaskRun
+kind: PipelineRun
 metadata:
-  generateName: claim-cluster-
+  generateName: cluster-round-trip-
 spec:
   serviceAccountName: cm-claim-cluster-sa
-  taskRef:
-    name: cm-clusterpool-claim
+  pipelineRef:
+    name: claim-noop-checkin-pipeline
   params:
-  - name: clusterpool-name
-    value: canary-aws-latest-48
   - name: clusterclaim-name
     value: cm-tekton-task-test
   - name: clusterpool-namespace
     value: clusterpool
   - name: clusterpool-group
     value: CICD
-  - name: image-tag
-    value: dev
+  - name: clusterpool-name
+    value: canary-aws-latest-48
   workspaces:
   - name: credentials
-    persistentVolumeClaim:
-      claimName: cm-claimed-cluster-credentials
+    volumeClaimTemplate:
+      spec:
+        resources:
+          requests:
+            storage: 5M
+        volumeMode: Filesystem
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: gp2

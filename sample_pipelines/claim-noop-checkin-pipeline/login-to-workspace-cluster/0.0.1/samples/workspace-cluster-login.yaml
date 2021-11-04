@@ -33,7 +33,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
-  generateName: claim-cluster-
+  name: claim-cluster
 spec:
   serviceAccountName: cm-claim-cluster-sa
   taskRef:
@@ -47,8 +47,6 @@ spec:
     value: clusterpool
   - name: clusterpool-group
     value: CICD
-  - name: image-tag
-    value: dev
   workspaces:
   - name: credentials
     persistentVolumeClaim:

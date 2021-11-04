@@ -1,0 +1,56 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: claim-noop-checkin-pipeline
+spec:
+  params:
+  - name: clusterpool-name
+    type: string
+    description: The name of the ClusterPool from which you want to claim a cluster.  
+  - name: clusterclaim-name
+    type: string
+    description: The name of the ClusterClaim that will be created against your ClusterPool
+  - name: clusterpool-namespace
+    type: string
+    description: The namespace that holds your ClusterPools
+  - name: clusterpool-group
+    type: string
+    description: An RBAC group that has access to your ClusterPools
+  workspaces:
+  - name: credentials
+  tasks:
+    - name: cluster-claim
+      taskRef:
+        name: cm-clusterpool-claim
+      params:
+      - name: clusterpool-name
+        value: "$(params.clusterpool-name)"
+      - name: clusterclaim-name
+        value: "$(params.clusterclaim-name)"
+      - name: clusterpool-namespace
+        value: "$(params.clusterpool-namespace)"
+      - name: clusterpool-group
+        value: "$(params.clusterpool-group)"
+      workspaces:
+      - name: credentials
+        workspace: credentials
+    - name: cluster-login
+      taskRef:
+        name: login-to-workspace-cluster
+      workspaces:
+      - name: credentials
+        workspace: credentials
+      runAfter:
+        - cluster-claim
+    - name: cluster-checkin
+      taskRef:
+        name: cm-clusterpool-checkin
+      params:
+      - name: clusterclaim-name
+        value: "$(params.clusterclaim-name)"
+      - name: clusterpool-namespace
+        value: "$(params.clusterpool-namespace)"
+      - name: clusterpool-group
+        value: "$(params.clusterpool-group)"
+      runAfter:
+        - cluster-login

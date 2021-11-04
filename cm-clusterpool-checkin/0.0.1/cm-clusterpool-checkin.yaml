@@ -26,7 +26,7 @@ spec:
     type: string
     description: An RBAC group that has access to your ClusterPools
   steps:
-  - name: write-kubeconfig
+  - name: checkin-cluster
     image: quay.io/gurnbenibm/cm:latest
     script: |
       echo "Setting up the local cluster as a ClusterPoolHost with which to interact."
