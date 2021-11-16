@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  generateName: login-to-cluster-
+spec:
+  taskRef:
+    name: login-to-cluster
+  params:
+  - name: api
+    value: https://cluster-url.com:6443
+  - name: username
+    value: kubeadmin
+  - name: password
+    value: REDACTED

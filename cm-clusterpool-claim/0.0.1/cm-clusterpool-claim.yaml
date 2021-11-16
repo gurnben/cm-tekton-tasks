@@ -29,10 +29,15 @@ spec:
   - name: clusterpool-group
     type: string
     description: An RBAC group that has access to your ClusterPools
-  workspaces:
-  - name: credentials
-    description: |
-      A workspace to which the admin username, password, and kubeconfig for the claimed cluster will be stored
+  results:
+  - name: username
+    description: Username for the claimed cluster.
+  - name: password
+    description: Password for the claimed cluster.  
+  - name: api
+    description: API URL of the claimed cluster.
+  - name: kubeconfig
+    description: Kubeconfig for the claimed cluster, if available.
   steps:
   - name: claim-cluster
     image: quay.io/gurnbenibm/cm:latest
@@ -50,7 +55,7 @@ spec:
       if [ $? -eq 0 ]
       then
         echo "Successfully claimed cluster with clusterclaim $(params.clusterclaim-name)"
-        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.user' > $(workspaces.credentials.path)/username
-        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.password' > $(workspaces.credentials.path)/password
-        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.apiServer' > $(workspaces.credentials.path)/api
+        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.user' | tr -d '\n' > $(results.username.path)
+        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.password' | tr -d '\n' > $(results.password.path)
+        cm get clusterclaim $(params.clusterclaim-name) --creds -o json | jq -r '.spec.apiServer' | tr -d '\n' > $(results.api.path)
       fi

@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: login-to-workspace-cluster
+  name: login-to-cluster
   labels:
     app.kubernetes.io/version: "0.0.1"
   annotations:
@@ -12,24 +12,30 @@ metadata:
     tekton.dev/platforms: "linux/amd64"
 spec:
   description: |
-    Logs in to a cluster whose credentials are stored in the credentials workspace.
+    Logs in to a cluster whose credentials are stored in the parameters.
 
     This task is meant to be used in conjunction with the cm-clusterpool-claim and cm-clusterpool-checkin tasks
     to claim a cluster (cm-clusterpool-claim), carry out a login and no-op operation on the claimed cluster (this task)
     and check the cluster back in (cm-clusterpool-checkin).  
-  workspaces:
-  - name: credentials
-    description: |
-      A workspace to which the admin username, password, and kubeconfig for the claimed cluster will be stored
+  params:
+  - name: username
+    type: string
+    description: Username for the claimed cluster.
+  - name: password
+    type: string
+    description: Password for the claimed cluster.  
+  - name: api
+    type: string
+    description: API URL of the claimed cluster.
   steps:
   - name: cluster-login
     image: quay.io/gurnbenibm/cm:latest
     script: |
-      echo "Logging in to the cluster whose credentials are in the credentials workspace."
+      echo "Logging in to the cluster whose credentials were passed in as parameters."
       set +x
-      oc login `cat $(workspaces.credentials.path)/api` \
-        -u=`cat $(workspaces.credentials.path)/username` \
-        -p=`cat $(workspaces.credentials.path)/password` \
+      oc login "$(params.api)" \
+        -u=$(params.username) \
+        -p=$(params.password) \
         --insecure-skip-tls-verify=true
       set -x
       echo "Running 'oc cluster-info' to verify target"

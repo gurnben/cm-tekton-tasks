@@ -16,8 +16,6 @@ spec:
   - name: clusterpool-group
     type: string
     description: An RBAC group that has access to your ClusterPools
-  workspaces:
-  - name: credentials
   tasks:
     - name: cluster-claim
       taskRef:
@@ -31,15 +29,16 @@ spec:
         value: "$(params.clusterpool-namespace)"
       - name: clusterpool-group
         value: "$(params.clusterpool-group)"
-      workspaces:
-      - name: credentials
-        workspace: credentials
     - name: cluster-login
+      params:
+      - name: username
+        value: "$(tasks.cluster-claim.results.username)"
+      - name: password
+        value: "$(tasks.cluster-claim.results.password)"
+      - name: api
+        value: "$(tasks.cluster-claim.results.api)"
       taskRef:
-        name: login-to-workspace-cluster
-      workspaces:
-      - name: credentials
-        workspace: credentials
+        name: login-to-cluster
       runAfter:
         - cluster-claim
     - name: cluster-checkin

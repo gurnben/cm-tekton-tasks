@@ -17,19 +17,6 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cm-claimed-cluster-credentials
-spec:
-  resources:
-    requests:
-      storage: 5M
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: gp2
----
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
@@ -49,7 +36,3 @@ spec:
     value: CICD
   - name: image-tag
     value: dev
-  workspaces:
-  - name: credentials
-    persistentVolumeClaim:
-      claimName: cm-claimed-cluster-credentials

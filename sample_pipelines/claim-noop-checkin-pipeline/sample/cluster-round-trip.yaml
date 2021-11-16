@@ -33,15 +33,4 @@ spec:
   - name: clusterpool-group
     value: CICD
   - name: clusterpool-name
-    value: canary-aws-latest-48
-  workspaces:
-  - name: credentials
-    volumeClaimTemplate:
-      spec:
-        resources:
-          requests:
-            storage: 5M
-        volumeMode: Filesystem
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: gp2
+    value: canary-aws-latest-49
